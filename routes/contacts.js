@@ -31,9 +31,9 @@ router.post('/',function(req, res){
 router.put('/',function(req, res){
     //put data, search based on field and update
     console.log('In put');
-    var searchEmail = req.body['email'];
+    var searchID = req.body['id'];
     //console.log(search);
-    ContactModel.find({email: searchEmail}, function(err, results){
+    ContactModel.find({_id: searchID}, function(err, results){
         if(err) res.status(500).json(err);
         else res.status(200).json(results);
     });
@@ -42,8 +42,14 @@ router.put('/',function(req, res){
 
 router.delete('/',function(req, res){
     //pass the id and delete, collect id from front end and delete from db
-    console.log('IN delete');
-    res.status(200).json({message : 'IMP_101'});
+    console.log('In delete');
+    var deleteID = req.body['id'];
+    console.log(deleteID);
+    ContactModel.remove({_id:deleteID},function(err,results){
+        if(err) res.status(500).json(err);
+        else res.status(200).json(results);
+    });
+    //res.status(200).json({message : 'IMP_101'});
 });
 
 module.exports = router; //make the router available to all to import
