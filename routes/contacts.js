@@ -9,8 +9,17 @@ var router = require('express').Router();
 
 var ContactModel = require('../models/contacts_model');
 
-router.get('/',function(req, res){
+router.get('/:email',function(req, res){
     //console.log(res.body);
+    ContactModel.findOne({email: req.params.email}, function(err, results){
+        if(err) res.status(500).json(err);
+        else res.status(200).json(results);
+    }); //find all
+});
+
+/* For get All*/
+router.get('/',function(req, res){
+    console.log(req.params);
     ContactModel.find({}, function(err, results){
         if(err) res.status(500).json(err);
         else res.status(200).json(results);
@@ -22,12 +31,15 @@ router.post('/',function(req, res){
     console.log(req.body);
     new ContactModel(req.body).save(function(err, results){
         if(err) res.status(500).json(err);
-        else res.status(200).json(results);
+        else {
+            res.status(200).json(results);
+            console.log(results)
+        };
+
     });
-    //res.status(200).json({message : 'IMP_101'});
 });
 
-
+/*
 router.put('/',function(req, res){
     //put data, search based on field and update
     console.log('In put');
@@ -39,17 +51,44 @@ router.put('/',function(req, res){
     });
 
 });
+*/
 
-router.delete('/',function(req, res){
+router.route('/:id').put( function( req, res){
+    ContactModel.findOne({ _id: req.params.id }, function(err, results) {
+        if(err) res.status(500).json(err);
+
+        for (prop in req.body) {
+            results[prop] = req.body[prop];
+        }
+
+        // save the movie
+        results.save(function(err) {
+            if(err) res.status(500).json(err);
+            else res.status(200).json(results);
+        });
+    });
+});
+
+router.delete('/:id',function(req, res){
     //pass the id and delete, collect id from front end and delete from db
-    console.log('In delete');
-    var deleteID = req.body['id'];
-    console.log(deleteID);
-    ContactModel.remove({_id:deleteID},function(err,results){
+
+    console.log('In router delete');
+    console.log(req.params.id);
+    ContactModel.remove({ _id : req.params.id},function(err,results){
         if(err) res.status(500).json(err);
         else res.status(200).json(results);
     });
-    //res.status(200).json({message : 'IMP_101'});
 });
-
+/*
+router.route('/:id').delete(function(req, res) {
+    ContactModel.remove({
+        _id: req.params.id
+    }, function(err, results) {
+        if (err) {
+            return res.send(err);
+        }
+        res.json({ message: 'Successfully deleted' });
+    });
+});
+*/
 module.exports = router; //make the router available to all to import

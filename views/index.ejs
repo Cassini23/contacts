@@ -11,33 +11,36 @@
     <form name="contacts" action="/" method="post">
         <input type ='text' name="username" placeholder="Name"/>
         <input type="email"  name="email" placeholder="Email"/>
-        <input type="submit" name ="button" value="Post data"/>
-        <button name="get">Get All</button>
+        <button data-valueID ="5" id ="post">Post data</button>
+        <button id="getByEmail">Get By Email</button>
+        <button id="get">Get All</button>
     </form>
-    <div>
 
 
+
+    <div class = 'update' data-id="" contenteditable="true">
+        <p class ='pName'></p>
+        <p class = 'pEmail'></p>
+        <button class = "delete" data-uid ="">Delete</button>
+        <button class = "update" data-uid="">Update</button>
     </div>
-    <form name="update" action="/" method="post">
-        <input type ='text' name="username" placeholder="Name"/>
-        <input type="email"  name="email" placeholder="Email"/>
-        <input type="submit" name ="button" value="Search"/>
-    </form>
+
+
 
   <script>
+      var oid;
       function ContactService(){
 
       };
 
       ContactService.prototype.create = function(object){
-          //console.log('Create fired!');
-          makeAjaxCall('/contacts', 'POST', object, done);
+         makeAjaxCall('/contacts', 'POST', object, done);
 
       };
 
       ContactService.prototype.get = function(id){
-          //get id
-
+          //get id //in reality passing an email to search
+          makeAjaxCall('/contacts/'+id,'GET', null, done);
       };
 
       ContactService.prototype.getAll = function(){
@@ -45,33 +48,80 @@
       };
 
       ContactService.prototype.update = function(id, object){
-
+          console.log('Update key fired!');
+          makeAjaxCall('/contacts/'+id, 'PUT', object, done);
       };
 
       ContactService.prototype.delete = function(id){
-
+          makeAjaxCall('/contacts/'+id, 'DELETE', null, done);
       };
 
+      /*Some Callback*/
       function done(){
           console.log("Done..");
-      }
+      };
+
+
 
       function makeAjaxCall(url, HttpVerb, Object, callback){
           var xhr = new XMLHttpRequest();
           xhr.open(HttpVerb, url); //get or post or any other verb
           // if the httpVerb is post, modify the request header - content-type, xhr.send(JSON.stringify(obj))
-
-          if(HttpVerb == 'POST' && typeof Object != null){
+          if(HttpVerb == 'POST' || HttpVerb == 'PUT' && typeof Object != null){
               //set the request header
               xhr.setRequestHeader('content-type', 'application/json');
           }
             xhr.addEventListener('readystatechange',function(){
                 if(xhr.readyState === 4){
-                    callback(xhr);
+                    if (xhr.status == 200) {
+                        callback(xhr);
+                        var  data = xhr.responseText;
+                        var jsonResponse = JSON.parse(data);
+                        if(HttpVerb === 'POST') createDiv(jsonResponse);
+                    }
                 }
             });
-          if(HttpVerb == 'POST')  xhr.send(JSON.stringify(Object));
+
+          if(HttpVerb == 'POST' || HttpVerb == 'PUT')  xhr.send(JSON.stringify(Object));
           if(HttpVerb == 'GET') xhr.send();
+          if(HttpVerb == 'DELETE') xhr.send();
+
+      }
+
+
+      function createDiv(object){
+
+          var div  = document.querySelector('div.update');
+          var pName = document.querySelector('p.pName');
+          var pEmail = document.querySelector('p.pEmail');
+          pName.innerHTML = "";
+          pEmail.innerHTML = "";
+
+          var name = object["name"];
+          var email = object["email"];
+          pName.innerHTML = name;
+          pEmail.innerHTML = email;
+
+          div.dataset.id = object["_id"];
+
+          var del = document.querySelector('button.delete');
+          del.dataset.uid = object["_id"];
+          var update = document.querySelector('button.update');
+          update.dataset.uid = object["_id"];
+
+      };
+
+      function createElement(elementType, parent, className, innerHTML, custom) {
+         var element = document.createElement(elementType);
+         if (parent) parent.appendChild(element);
+         if (className) element.className = className;
+         if (innerHTML) element.innerHTML = innerHTML;
+         if (typeof custom !== 'undefined') {
+             for (var prop in custom) {
+                 element.setAttribute(prop, custom[prop]);
+             }
+         }
+         return element;
       }
 
       document.addEventListener('DOMContentLoaded',function(){
@@ -82,9 +132,9 @@
               event.preventDefault();
           });
 
-          var button = forms.button;
+          /*Event Listener for Post method*/
+          var button = document.querySelector('#post');
           button.addEventListener('click', function(){
-              //console.log('Button click');
               var usernameIn = forms.username.value;
               var emailIn = forms.email.value;
 
@@ -94,19 +144,50 @@
               cs.create(contactObject);
 
           });
-          var getButton = document.querySelector('button');
+
+          /*Event Listener for get All method*/
+          var getButton = document.querySelector('#get');
           getButton.addEventListener('click',function(){
+              console.log("Inside the get button");
               var cs = new ContactService();
               cs.getAll();
           });
-          //for get single id
-          var updateForm = document.forms.update;
-          updateForm.addEventListener('click', function(event){
-              //prevent default on event
-              event.preventDefault();
+
+          /*Event Listener for delete method*/
+          var del = document.querySelector('button.delete');
+          del.addEventListener('click',function(){
+              console.log('delete event listener');
+              var cs = new ContactService();
+              if(del.dataset.uid!=="") cs.delete(del.dataset.uid);
+              else console.log('not fired!');
           });
-          var updateButton = document.forms.search.button;
-          //console.log(searchButton);
+
+          /*Event Listener for update method*/
+
+          var update = document.querySelector('button.update');
+          update.addEventListener('click',function(){
+              console.log('update event listener');
+              var cs = new ContactService();
+              var pName = document.querySelector('p.pName');
+              var pEmail = document.querySelector('p.pEmail');
+              //create an updated object to pass to put
+              var obj ={};
+              obj.name = pName.innerHTML;
+              obj.email = pEmail.innerHTML;
+              if(update.dataset.uid!=="") cs.update(update.dataset.uid, obj);
+              else console.log('not fired!');
+          });
+
+
+          /*Event listener for the get by email method*/
+          var getByEmail = document.querySelector('#getByEmail');
+          console.log(getByEmail);
+          getByEmail.addEventListener('click',function(){
+              console.log('get by email event listener');
+              var cs = new ContactService();
+              var email = document.forms.contacts.email.value;
+              cs.get(email);
+          });
 
       });
   </script>
